@@ -1,4 +1,5 @@
 QT       += core gui
+QT += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -17,16 +18,26 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     choosefiledialog.cpp \
+    downloadpopup.cpp \
+    htmlparser.cpp \
     main.cpp \
-    mainwindow.cpp
+    mainwindow.cpp \
+    mangainfo.cpp \
+    mangainfodisplay.cpp
 
 HEADERS += \
     choosefiledialog.h \
-    mainwindow.h
+    downloadpopup.h \
+    htmlparser.h \
+    mainwindow.h \
+    mangainfo.h \
+    mangainfodisplay.h
 
 FORMS += \
     choosefiledialog.ui \
-    mainwindow.ui
+    downloadpopup.ui \
+    mainwindow.ui \
+    mangainfodisplay.ui
 
 TRANSLATIONS += \
     mangacal_en_US.ts
@@ -35,3 +46,10 @@ TRANSLATIONS += \
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+
+
+unix:!macx: LIBS += -L/usr/local/lib/ -lhpdf-2.4.0dev
+
+INCLUDEPATH += /usr/local/include
+DEPENDPATH += /usr/local/include

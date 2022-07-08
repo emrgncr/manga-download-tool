@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 #include <QDir>
+#include <QtNetwork>
+#include <QJsonArray>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -18,11 +20,14 @@ public:
 
     static QDir defaultDownloadDirectory;
     static QString domainLink;
+    static QJsonArray jarray;
 
 private slots:
     void on_actionchoose_download_location_triggered();
 
     void on_pushButton_clicked();
+
+    void manga_network_come(QNetworkReply* reply);
 
 private:
     Ui::MainWindow *ui;
