@@ -59,3 +59,6 @@ else:unix:!macx: LIBS += -lhpdf
 
 INCLUDEPATH += /usr/local/include
 DEPENDPATH += /usr/local/include
+
+RESOURCES += \
+    rsc.qrc

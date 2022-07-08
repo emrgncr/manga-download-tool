@@ -1,0 +1,8 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Type=Application
+Name=Manga Download Tool
+Comment=A desktop app to download manga as pdf
+Exec=mangacal
+Icon=mangacal
+Categories=Network;Utility;
