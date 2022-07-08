@@ -3,7 +3,9 @@ QT += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
-CONFIG += c++11
+CONFIG += c++14
+
+CONFIG += no_lflags_merge
 
 # The following define makes your compiler emit warnings if you use
 # any Qt feature that has been marked deprecated (the exact warnings
@@ -53,7 +55,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 win32:CONFIG(release, debug|release): LIBS += -L/usr/local/lib/release/ -lhpdf
 else:win32:CONFIG(debug, debug|release): LIBS += -L/usr/local/lib/debug/ -lhpdf
-else:unix:!macx: LIBS += -L/usr/local/lib/ -lhpdf
+else:unix:!macx: LIBS += -lhpdf
 
 INCLUDEPATH += /usr/local/include
 DEPENDPATH += /usr/local/include

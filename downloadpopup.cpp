@@ -32,6 +32,9 @@ DownloadPopup::DownloadPopup(QWidget *parent, mangaInfo* info) :
     ui->minspin->setValue(1);
     ui->maxspin->setValue((int)std::ceil(info->getChapterCount()));
 
+
+    setAttribute(Qt::WA_DeleteOnClose);
+
 }
 
 DownloadPopup::~DownloadPopup()
@@ -105,18 +108,15 @@ std::vector<int>* DownloadPopup::getChaptersArray(std::string x)
 
 void DownloadPopup::enterMainLoop()
 {
-    std::cout<<"asdasdasdasdasdasdda"<<std::endl;
-    std::cout<<DownloadPopup::arr.size()<<std::endl;
-    std::cout<<"s?"<<std::endl;
-    if(arr.size() == 0) return; //TODO add endstatic QJsonArray chapters;
+    if(arr.size() == 0){
+        ui->textBrowser->append("DOWNLOAD COMPLATE");
+        ui->progressBar->setValue(100);
+        return;
+    }
     QJsonValue f = arr.last();
-    std::cout<<"b"<<std::endl;
     arr.removeLast();
-    std::cout<<"c"<<std::endl;
     int chapterint = f.toObject().value("Chapter").toString().toInt();
-    std::cout<<"d"<<std::endl;
     int chapterSmol = (chapterint - 100000)/10;
-        std::cout<<chapterSmol<<" MAX : "<<ui->maxspin->value() <<" MIN: " <<ui->minspin->value()<<" ARSIZE: "<<arr.size() <<std::endl;
     if(chapterSmol > ui->maxspin->value()) {
         enterMainLoop();
         return;
@@ -125,18 +125,21 @@ void DownloadPopup::enterMainLoop()
         enterMainLoop();
         return;
     }
-    std::cout<<"got here"<<std::endl;
+    ui->textBrowser->append("Downloading chapter: " + QString::fromStdString(chapterCodeToChapterSmol(chapterint)));
+    std::cout<<"ChapterSmol= "<<chapterSmol<<std::endl;
 //Go to chapter website
     QString url = MainWindow::domainLink + "/read-online/" + QString::fromStdString(info->getName())
             + "-chapter-" + QString::fromStdString(chapterCodeToChapterSmol(chapterint))+".html";
 
     auto man = new QNetworkAccessManager();
-    connect(man,&QNetworkAccessManager::finished,this,&DownloadPopup::gotChapterPage);
+    connect(man,&QNetworkAccessManager::finished,this,[=](QNetworkReply* res){
+        gotChapterPage(res,(chapterint - 100000));
+    });
     man->get(QNetworkRequest(QUrl(url)));
 
 }
 
-void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::string seriesName,int maxPages)
+void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::string seriesName,int maxPages,std::string base_url)
 {
     std::cout<<chapter << " " <<page << " " <<maxPages<<std::endl;
     QImage img;
@@ -146,9 +149,31 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
         MainWindow::defaultDownloadDirectory.cd(QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter)));
         std::cout<<(MainWindow::defaultDownloadDirectory.path()+"/" +QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter))+"-"
                 +QString::fromStdString(numToChapter(page))+".png").toStdString()<<std::endl;
-    std::cout<<img.save(MainWindow::defaultDownloadDirectory.path()+"/" +QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter))+"-"
-                        +QString::fromStdString(numToChapter(page))+".png")<<std::endl;
+    bool success = img.save(MainWindow::defaultDownloadDirectory.path()+"/" +QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter))+"-"
+                            +QString::fromStdString(numToChapter(page))+".png");
+
+    std::cout<<"SUCCESS: "<<success<<std::endl;
     MainWindow::defaultDownloadDirectory.cdUp();
+    if(!success){
+        //wait for timeout
+        QTimer::singleShot(25000,this,[=]{
+            callSinglePage(chapter,page,seriesName,maxPages,base_url);
+        });
+        return;
+    }
+
+
+
+    if(page < maxPages){
+        double x1 = page;
+        double x2 = chapter;
+        QTimer::singleShot(150,this,[=]{
+            ui->progressBar->setValue(
+                    (((x2/10) -ui->minspin->value() + (x1/maxPages))*100/((ui->maxspin->value() - ui->minspin->value())))
+                    );
+            callSinglePage(chapter,page + 1,seriesName,maxPages,base_url);
+        });
+    }else
     if(page == maxPages){
         //GENERATE PDF
         //wait to be sure
@@ -192,11 +217,36 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
 
 
         //NEXT CHAPTER
-         QTimer::singleShot(10000,this,[=]{std::cout<<"aaaaaaaa"<<std::endl;enterMainLoop();});
-         ui->progressBar->setValue(
-                     (maxChapters - arr.size())*100/maxChapters
-                     );
+         QTimer::singleShot(5000,this,[=]{
+             std::cout<<"newChapter"<<std::endl;
+             enterMainLoop();});
+
+//             ui->progressBar->setValue(
+//                     ((chapter/10) - ui->minspin->value())*100/(ui->maxspin->value() - ui->minspin->value())
+//                     );
     }
+
+}
+
+void DownloadPopup::callSinglePage(int chapter, int page, std::string seriesName, int maxPages,std::string base_url)
+{
+    std::string chapstr;
+    std::cout<<"qwe?"<<std::endl;
+    chapstr = numToChapter2(chapter/10);
+    if(chapter % 10 != 0){
+        chapstr += "." + std::to_string(chapter%10);
+    }
+    std::cout<<chapstr<<std::endl;
+    ui->textBrowser->append("Downloading page: " + QString::fromStdString(std::to_string(page)));
+    QString url = "https://"+QString::fromStdString(base_url) + "/manga/" + QString::fromStdString(info->getName())
+            + "/" + QString::fromStdString(chapstr)+'-'+QString::fromStdString(numToChapter(page))+".png";
+    std::cout<<url.toStdString()<<std::endl;
+    //Download page after waiting for some time
+    auto man = new QNetworkAccessManager();
+    connect(man,&QNetworkAccessManager::finished,this,[=](QNetworkReply * res){
+        savePage(res,chapter,page,seriesName,maxPages,base_url);
+    });
+    man->get(QNetworkRequest(QUrl(url)));
 
 }
 
@@ -236,7 +286,7 @@ void DownloadPopup::gotMainPage(QNetworkReply *res)
     enterMainLoop();
 }
 
-void DownloadPopup::gotChapterPage(QNetworkReply *res)
+void DownloadPopup::gotChapterPage(QNetworkReply *res,int chapter)
 {
     std::string source = res->readAll().toStdString();
     int t1 = source.find("vm.CurPathName = ") + 17;
@@ -250,51 +300,23 @@ void DownloadPopup::gotChapterPage(QNetworkReply *res)
     std::string seriesName = source.substr(t1,t2-t1);
 
 
-//    std::cout<<chapterInfoJsonText<<std::endl;
     QJsonDocument doc = QJsonDocument::fromJson(QString(chapterInfoJsonText.c_str()).toUtf8());
     QJsonObject obj = doc.object();
-//    std::cout<<obj.value("Page").toString().toStdString()<<std::endl;
     int pages = obj.value("Page").toString().toInt();
-    std::string ustr = res->url().toString().toStdString();
-    t1 = ustr.rfind("-chapter-") + 9;
-    t2 = ustr.rfind(".html");
-//    std::cout<<"axd "<<t1<<" "<<t2<<" " << ustr<<std::endl;
-    ustr = ustr.substr(t1,t2-t1);
-    t1 = ustr.find('.');
-    int chapter = 0;
-//    std::cout<<"asd"<<std::endl;
-    if(t1 == -1) chapter = QString::fromStdString(ustr).toInt() * 10;
-    else{
-        chapter = (10*(QString::fromStdString(ustr.substr(0,t1)).toInt())) + ustr[ustr.length()-1];
-    }
-//    std::cout<<"CHAPTER "<<chapter<<" PAGES "<<base_url<<std::endl;
+//    std::string ustr = res->url().toString().toStdString();
+//    t1 = ustr.rfind("-chapter-") + 9;
+//    t2 = ustr.rfind(".html");
+//    ustr = ustr.substr(t1,t2-t1);
+//    t1 = ustr.find('.');
+//    int chapter = 0;
+//    if(t1 == -1) chapter = QString::fromStdString(ustr).toInt() * 10;
+//    else{
+//        chapter = (10*(QString::fromStdString(ustr.substr(0,t1)).toInt())) + ustr[ustr.length()-1];
+//    }
 
-    for(int i = 1;i<= pages;i++){
-        //getpageurl
-        std::string chapstr;
-        std::cout<<"qwe?"<<std::endl;
-        chapstr = numToChapter2(chapter/10);
-        if(chapter % 10 != 0){
-            chapstr += "." + std::to_string(chapter%10);
-        }
-        std::cout<<chapstr<<std::endl;
-        QString url = "https://"+QString::fromStdString(base_url) + "/manga/" + QString::fromStdString(info->getName())
-                + "/" + QString::fromStdString(chapstr)+'-'+QString::fromStdString(numToChapter(i))+".png";
-        std::cout<<url.toStdString()<<std::endl;
-        //Download page after waiting for some time
-        QTimer::singleShot(i*300,this,[=](){
-            auto man = new QNetworkAccessManager();
-            connect(man,&QNetworkAccessManager::finished,this,[=](QNetworkReply * res){
-                savePage(res,chapter,i,seriesName,pages);
-            });
-            man->get(QNetworkRequest(QUrl(url)));
-        });
-
-
-    }
+    callSinglePage(chapter,1,seriesName,pages,base_url);
 
 
 }
-
 
 

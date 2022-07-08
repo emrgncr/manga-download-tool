@@ -133,6 +133,16 @@
     <number>0</number>
    </property>
   </widget>
+  <widget class="QTextBrowser" name="textBrowser">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>170</y>
+     <width>561</width>
+     <height>141</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections>

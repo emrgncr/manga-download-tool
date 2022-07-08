@@ -33,7 +33,9 @@ public:
 
     void enterMainLoop();
 
-    void savePage(QNetworkReply* res,int chapter,int page,std::string seriesName,int maxPages);
+    void savePage(QNetworkReply* res,int chapter,int page,std::string seriesName,int maxPages,std::string);
+    void callSinglePage(int chapter,int page,std::string seriesName,int maxPages,std::string);
+    void gotChapterPage(QNetworkReply* res,int chapter);
 
 private slots:
     void on_minspin_valueChanged(int arg1);
@@ -44,7 +46,6 @@ private slots:
 
     void gotMainPage(QNetworkReply* res);
 
-    void gotChapterPage(QNetworkReply* res);
 
 private:
     Ui::DownloadPopup *ui;
