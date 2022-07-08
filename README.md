@@ -11,8 +11,10 @@ chmod +x Manga_Download_Tool-x86_64.AppImage
 ## Building
 ### Linux
 You will need qmake and libhpdf in addition to basic build tools.
+
 To instal libhpdf:
-Ubuntu
+
+Ubuntu:
 ```
 apt install libhpdf-2.3.0
 ```
