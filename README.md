@@ -1,5 +1,13 @@
 # Manga Download Tool
 This is a desktop app that downloads mangas as pdf.
+## Running
+On linux, you can either download the AppImage file from Releases and use it or build from source.
+
+To use the AppImage
+```
+chmod +x Manga_Download_Tool-x86_64.AppImage
+./Manga_Download_Tool-x86_64.AppImage
+```
 ## Building
 ### Linux
 You will need qmake and libhpdf in addition to basic build tools.
