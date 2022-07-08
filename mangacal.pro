@@ -49,7 +49,11 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 
 
-unix:!macx: LIBS += -L/usr/local/lib/ -lhpdf-2.4.0dev
+
+
+win32:CONFIG(release, debug|release): LIBS += -L/usr/local/lib/release/ -lhpdf
+else:win32:CONFIG(debug, debug|release): LIBS += -L/usr/local/lib/debug/ -lhpdf
+else:unix:!macx: LIBS += -L/usr/local/lib/ -lhpdf
 
 INCLUDEPATH += /usr/local/include
 DEPENDPATH += /usr/local/include
