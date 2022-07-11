@@ -26,7 +26,7 @@ DownloadPopup::DownloadPopup(QWidget *parent, mangaInfo* info) :
                            info->getName() + " / " + s + " chapters"
                            ));
     ui->minspin->setMinimum(1);
-    ui->maxspin->setMinimum(2);
+    ui->maxspin->setMinimum(1);
     ui->maxspin->setMaximum((int)std::ceil(info->getChapterCount()));
     ui->minspin->setMaximum(1);
     ui->minspin->setValue(1);
@@ -144,7 +144,9 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
     std::cout<<chapter << " " <<page << " " <<maxPages<<std::endl;
     QImage img;
     img.loadFromData(res->readAll());
-//    ui->label_3->setPixmap(QPixmap::fromImage(img).scaled(ui->label_3->width(),ui->label_3->height()));
+    res->close();
+        MainWindow::defaultDownloadDirectory.mkdir(QString::fromStdString(seriesName));
+        MainWindow::defaultDownloadDirectory.cd(QString::fromStdString(seriesName));
         MainWindow::defaultDownloadDirectory.mkdir(QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter)));
         MainWindow::defaultDownloadDirectory.cd(QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter)));
         std::cout<<(MainWindow::defaultDownloadDirectory.path()+"/" +QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter))+"-"
@@ -154,9 +156,10 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
 
     std::cout<<"SUCCESS: "<<success<<std::endl;
     MainWindow::defaultDownloadDirectory.cdUp();
+    MainWindow::defaultDownloadDirectory.cdUp();
     if(!success){
         //wait for timeout
-        QTimer::singleShot(25000,this,[=]{
+        QTimer::singleShot(60000,this,[=]{
             callSinglePage(chapter,page,seriesName,maxPages,base_url);
         });
         return;
@@ -186,8 +189,9 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
                 return;
             }
             HPDF_SetPageMode (pdf, HPDF_PAGE_MODE_USE_OUTLINE);
-
+            HPDF_SetCompressionMode(pdf,0x02);
             //scroll thru pages:)
+            MainWindow::defaultDownloadDirectory.cd(QString::fromStdString(seriesName));
             MainWindow::defaultDownloadDirectory.cd(QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter)));
             for(int i = 1;i<= maxPages;i++){
                 auto img = HPDF_LoadPngImageFromFile(pdf,(MainWindow::defaultDownloadDirectory.path()+"/" +QString::fromStdString(seriesName)
@@ -200,16 +204,17 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
                 HPDF_Page_SetWidth(page_1,HPDF_Image_GetWidth(img));
                 HPDF_Page_SetHeight(page_1,HPDF_Image_GetHeight(img));
                 HPDF_Page_DrawImage (page_1,img,0, 0,HPDF_Image_GetWidth(img),HPDF_Image_GetHeight(img));
+
+
             }
 
 
-
-
             MainWindow::defaultDownloadDirectory.cdUp();
+//            MainWindow::defaultDownloadDirectory.rmdir(QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter)));
             std::string savestring =  MainWindow::defaultDownloadDirectory.path().toStdString() +
                     '/' + seriesName
                     + "-"+ numToChapter2(chapter)+".pdf";
-
+            MainWindow::defaultDownloadDirectory.cdUp();
             std::cout<<savestring<< " " <<HPDF_SaveToFile(pdf,savestring.c_str())<<std::endl;
             HPDF_Free(pdf);
         });
@@ -252,13 +257,13 @@ void DownloadPopup::callSinglePage(int chapter, int page, std::string seriesName
 
 void DownloadPopup::on_minspin_valueChanged(int arg1)
 {
-    ui->maxspin->setMinimum(arg1 + 1);
+    ui->maxspin->setMinimum(arg1);
 }
 
 
 void DownloadPopup::on_maxspin_valueChanged(int arg1)
 {
-    ui->minspin->setMaximum(arg1 - 1);
+    ui->minspin->setMaximum(arg1);
 }
 
 
@@ -275,6 +280,7 @@ void DownloadPopup::on_pushButton_clicked()
 void DownloadPopup::gotMainPage(QNetworkReply *res)
 {
     std::string source = res->readAll().toStdString();
+    res->close();
     size_t t1 = source.find("vm.Chapters = ") + 14;
     size_t t2 = source.find(';',t1);
     source = source.substr(t1,t2-t1);
@@ -289,6 +295,7 @@ void DownloadPopup::gotMainPage(QNetworkReply *res)
 void DownloadPopup::gotChapterPage(QNetworkReply *res,int chapter)
 {
     std::string source = res->readAll().toStdString();
+    res->close();
     int t1 = source.find("vm.CurPathName = ") + 17;
     int t2 = source.find(';',t1);
     std::string base_url = source.substr(t1+1,t2-t1-2);

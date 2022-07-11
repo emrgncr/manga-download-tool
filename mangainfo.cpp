@@ -18,6 +18,7 @@ mangaInfo::mangaInfo(std::string name,std::string name2, std::string author
     auto man = new QNetworkAccessManager();
     QObject::connect(man,&QNetworkAccessManager::finished,this,[=](QNetworkReply* res){
         std::string source = res->readAll().toStdString();
+        res->close();
         size_t t1 = source.find("vm.Chapters = ") + 14;
         size_t t2 = source.find(';',t1);
         source = source.substr(t1,t2-t1);
