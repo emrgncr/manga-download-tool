@@ -12,8 +12,9 @@
 #include <math.h>
 
 using namespace std;
+string pp_url_const = "";
 htmlParser::htmlParser(){}
-vector<mangaInfo*>* htmlParser::getMangas(QJsonArray arr,string key){
+vector<mangaInfo*>* htmlParser::getMangas(QJsonArray arr,string key,string pp_source = "a"){
     vector<mangaInfo*>* ret = new vector<mangaInfo*>();
 
 //    cout<<arr.at(0).toObject().value("i").toString().toStdString()<<endl;
@@ -36,7 +37,7 @@ vector<mangaInfo*>* htmlParser::getMangas(QJsonArray arr,string key){
         string name2 = vc->at(i).second.value("s").toString().toStdString();
         string author = vc->at(i).second.value("a").toArray().at(0).toString().toStdString();
         int year = vc->at(i).second.value("y").toString().toInt();
-        string pp_url = "https://cover.nep.li/cover/"+name+".jpg";
+        string pp_url = pp_source+name+".jpg";
         double chapterCount = (vc->at(i).second.value("l").toString().toDouble() - 100000) / 10;
         vector<string>* genres = new vector<string>();
         QJsonArray jar = vc->at(i).second.value("g").toArray();

@@ -21,6 +21,7 @@ public:
     static QDir defaultDownloadDirectory;
     static QString domainLink;
     static QJsonArray jarray;
+    static QString thumbnailUrl;
 
 private slots:
     void on_actionchoose_download_location_triggered();

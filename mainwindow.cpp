@@ -15,6 +15,7 @@
 QDir MainWindow::defaultDownloadDirectory = QDir(QDir::home().path()+"/Downloads/MangacalDownloads/");
 QString MainWindow::domainLink = "https://mangasee123.com";
 QJsonArray MainWindow::jarray;
+QString MainWindow::thumbnailUrl = "https://temp.compsci88.com/cover/";
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -28,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     }
     QNetworkAccessManager* manager = new QNetworkAccessManager(this);
     connect(manager,SIGNAL(finished(QNetworkReply *)),this,SLOT(manga_network_come(QNetworkReply *)));
-    manager->get(QNetworkRequest(QUrl(domainLink + "/search/?name="+"asd")));
+    manager->get(QNetworkRequest(QUrl(domainLink + "/search/?name="+"")));
 }
 
 MainWindow::~MainWindow()
@@ -50,9 +51,15 @@ void MainWindow::on_actionchoose_download_location_triggered()
 
 
 void MainWindow::manga_network_come(QNetworkReply* reply){
-//    std::cout<<"aaaaa"<<std::endl;
+//    std::cout<<"https://mangasee123.com/search/?name="<<std::endl;
 //    std::cout<<reply->readAll().toStdString()<<std::endl;
     std::string s = reply->readAll().toStdString();
+    //find thumbnail sources
+    size_t q1 = s.find("{{Result.i}}.jpg");
+    std::string s2 = s.substr(0,q1);
+    q1 = s2.rfind("\"");
+    s2 = s2.substr(q1+1);
+
     size_t t1 = s.find("vm.Directory = ") + 15;
     size_t t2 = s.find("vm.GetIntValue",t1)-1;
     s = s.substr(t1,t2-t1);
@@ -62,6 +69,7 @@ void MainWindow::manga_network_come(QNetworkReply* reply){
     QJsonDocument doc = QJsonDocument::fromJson(QString(s.c_str()).toUtf8());
     QJsonArray arr = doc.array();
     MainWindow::jarray = arr;
+    MainWindow::thumbnailUrl = QString::fromStdString(s2);
 
 //    std::cout<<htmlParser::getMangas(reply->readAll().toStdString())->at(0).getName()<<std::endl;
     reply->close();
@@ -75,7 +83,7 @@ void MainWindow::on_pushButton_clicked()
     QPlainTextEdit* te = ui->mangaName;
     QString searchText = te->toPlainText();
 //    std::cout<<(domainLink + "/search/?name="+searchText).toStdString()<<std::endl;
-    std::vector<mangaInfo*>* info = htmlParser::getMangas(*new QJsonArray(MainWindow::jarray),searchText.toStdString());
+    std::vector<mangaInfo*>* info = htmlParser::getMangas(*new QJsonArray(MainWindow::jarray),searchText.toStdString(),MainWindow::thumbnailUrl.toStdString());
     QWidget* mangaScrollContent = new QWidget();
     QVBoxLayout * layout = new QVBoxLayout();
     mangaScrollContent->setLayout(layout);
