@@ -6,6 +6,7 @@
 #include "QtNetwork"
 #include "mainwindow.h"
 #include "QTimer"
+#include "QColorSpace"
 #include "hpdf.h"
 
 QJsonArray DownloadPopup::arr;
@@ -144,7 +145,9 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
     std::cout<<chapter << " " <<page << " " <<maxPages<<std::endl;
     QImage img;
     img.loadFromData(res->readAll());
+    img.convertToColorSpace(QColorSpace::SRgb);
     res->close();
+    res->deleteLater();
         MainWindow::defaultDownloadDirectory.mkdir(QString::fromStdString(seriesName));
         MainWindow::defaultDownloadDirectory.cd(QString::fromStdString(seriesName));
         MainWindow::defaultDownloadDirectory.mkdir(QString::fromStdString(seriesName) + "-"+QString::fromStdString(numToChapter2(chapter)));
@@ -170,12 +173,10 @@ void DownloadPopup::savePage(QNetworkReply *res, int chapter, int page,std::stri
     if(page < maxPages){
         double x1 = page;
         double x2 = chapter;
-        QTimer::singleShot(150,this,[=]{
             ui->progressBar->setValue(
                     (((x2/10) -ui->minspin->value() + (x1/maxPages))*100/((ui->maxspin->value() - ui->minspin->value())))
                     );
             callSinglePage(chapter,page + 1,seriesName,maxPages,base_url);
-        });
     }else
     if(page == maxPages){
         //GENERATE PDF
@@ -281,6 +282,7 @@ void DownloadPopup::gotMainPage(QNetworkReply *res)
 {
     std::string source = res->readAll().toStdString();
     res->close();
+    res->deleteLater();
     size_t t1 = source.find("vm.Chapters = ") + 14;
     size_t t2 = source.find(';',t1);
     source = source.substr(t1,t2-t1);
